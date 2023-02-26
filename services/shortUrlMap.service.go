@@ -3,11 +3,13 @@ package services
 import (
 	"context"
 	"go.mongodb.org/mongo-driver/mongo"
+	"url_shortner/genericMongo"
 	"url_shortner/models"
 )
 
 type ShortUrlMapService struct {
-	collection *mongo.Collection
+	Collection   *mongo.Collection
+	GenericMongo *genericMongo.GenericMongo
 }
 
 func (service *ShortUrlMapService) Create(urlId string, longUrl string, passworded bool, password string, expiryTime int) error {
@@ -20,7 +22,7 @@ func (service *ShortUrlMapService) Create(urlId string, longUrl string, password
 		NumberOfHits: 0,
 	}
 
-	_, error := service.collection.InsertOne(context.Background(), newShortMapService)
+	_, error := service.Collection.InsertOne(context.Background(), newShortMapService)
 
 	if error != nil {
 		return error
