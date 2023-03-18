@@ -7,12 +7,12 @@ import (
 	"url_shortner/models"
 )
 
-type ShortUrlMapService struct {
+type ShortUrlsService struct {
 	Collection   *mongo.Collection
 	GenericMongo *genericMongo.GenericMongo
 }
 
-func (service *ShortUrlMapService) Create(urlId string, longUrl string, passworded bool, password string, expiryTime int) error {
+func (service *ShortUrlsService) Create(urlId string, longUrl string, passworded bool, password string, expiryTime int) error {
 	newShortMapService := models.ShortURLMap{
 		UrlId:        urlId,
 		LongURL:      longUrl,

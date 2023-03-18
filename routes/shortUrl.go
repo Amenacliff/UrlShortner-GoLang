@@ -10,7 +10,7 @@ import (
 )
 
 type ShortUrlRoutes struct {
-	shortUrlMapService services.ShortUrlMapService
+	shortUrlMapService services.ShortUrlsService
 }
 
 var shortUrlController controller.ShortURLController
@@ -19,7 +19,7 @@ func (shortUrlRoute *ShortUrlRoutes) Init(shortUrlMapCollection *mongo.Collectio
 	genericMongoClient := &genericMongo.GenericMongo{
 		Collection: shortUrlMapCollection,
 	}
-	shortUrlMapService := services.ShortUrlMapService{
+	shortUrlMapService := services.ShortUrlsService{
 		Collection:   shortUrlMapCollection,
 		GenericMongo: genericMongoClient,
 	}
@@ -37,5 +37,5 @@ func (shortUrlRoute *ShortUrlRoutes) SetUpRoutes(app *fiber.App, shortUrlControl
 	shortUrlRoute.Init(shortUrlMapCollection)
 
 	shortURLRoute := app.Group("/shortUrl")
-	shortURLRoute.Post("/create", shortUrlController.Create)
+	shortURLRoute.Get("/create", shortUrlController.Create)
 }
