@@ -9,13 +9,13 @@ import (
 
 type UserService struct {
 	Collection   *mongo.Collection
-	GenericMongo *genericMongo.GenericMongo
+	GenericMongo *genericMongo.GenericMongo[models.User]
 }
 
 func (userSer *UserService) Create(emailAddress, passwordHash string) error {
 	newUser := models.User{
-		Email:        "",
-		PasswordHash: "",
+		Email:        emailAddress,
+		PasswordHash: passwordHash,
 	}
 
 	_, err := userSer.Collection.InsertOne(context.TODO(), newUser)

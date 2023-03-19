@@ -1,22 +1,26 @@
 package genericMongo
 
 import (
+	"errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 import appContext "context"
 
-type GenericMongo struct {
+type GenericMongo[T any] struct {
 	Collection *mongo.Collection
 }
 
-func (genericMongoose *GenericMongo) FindOne(keysAndValues map[any]any) (any, error) {
+func (genericMongoose *GenericMongo[T]) FindOne(keysAndValues map[any]any) (T, error) {
 
-	var document any
+	var document T
 
 	err := genericMongoose.Collection.FindOne(appContext.Background(), keysAndValues).Decode(&document)
 
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return document, errors.New("Document not found")
+		}
 		return document, err
 	}
 
@@ -24,8 +28,8 @@ func (genericMongoose *GenericMongo) FindOne(keysAndValues map[any]any) (any, er
 
 }
 
-func (genericMongoose *GenericMongo) Find(keysAndValues map[any]any) ([]any, error) {
-	var allDocuments []any
+func (genericMongoose *GenericMongo[T]) Find(keysAndValues map[any]any) ([]T, error) {
+	var allDocuments []T
 
 	results, err := genericMongoose.Collection.Find(appContext.Background(), keysAndValues)
 
@@ -42,9 +46,9 @@ func (genericMongoose *GenericMongo) Find(keysAndValues map[any]any) ([]any, err
 	return allDocuments, nil
 }
 
-func (genericMongoose *GenericMongo) GetAll() ([]any, error) {
+func (genericMongoose *GenericMongo[T]) GetAll() ([]T, error) {
 
-	var allDocuments []any
+	var allDocuments []T
 
 	results, err := genericMongoose.Collection.Find(appContext.Background(), bson.D{})
 

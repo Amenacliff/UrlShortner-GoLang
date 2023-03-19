@@ -6,6 +6,7 @@ import (
 	"url_shortner/constants"
 	"url_shortner/controller"
 	"url_shortner/genericMongo"
+	"url_shortner/models"
 	"url_shortner/services"
 )
 
@@ -17,7 +18,7 @@ type ShortUrlRoutes struct {
 var shortUrlController controller.ShortURLController
 
 func (shortUrlRoute *ShortUrlRoutes) Init(shortUrlMapCollection *mongo.Collection) {
-	genericMongoClient := &genericMongo.GenericMongo{
+	genericMongoClient := &genericMongo.GenericMongo[models.ShortURLMap]{
 		Collection: shortUrlMapCollection,
 	}
 	shortUrlMapService := services.ShortUrlsService{

@@ -9,7 +9,7 @@ import (
 
 type ShortUrlsService struct {
 	Collection   *mongo.Collection
-	GenericMongo *genericMongo.GenericMongo
+	GenericMongo *genericMongo.GenericMongo[models.ShortURLMap]
 }
 
 func (service *ShortUrlsService) Create(urlId string, longUrl string, passworded bool, password string, expiryTime int) error {

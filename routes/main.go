@@ -9,9 +9,11 @@ import (
 func SetUpAllRoutes(app *fiber.App, mongoDBClient *mongo.Client) {
 
 	dataBase := mongoDBClient.Database(constants.DATABASE_NAME)
-	
+
 	shortUrlRoutes := ShortUrlRoutes{}
+	userRoutes := UserRoute{}
 
 	shortUrlRoutes.SetUpRoutes(app, dataBase)
+	userRoutes.SetUpRoute(app, dataBase)
 
 }
