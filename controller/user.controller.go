@@ -2,6 +2,8 @@ package controller
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	userDTO "url_shortner/dto/user"
 	"url_shortner/models"
@@ -22,16 +24,34 @@ func (controller *UserController) Create(ctx *fiber.Ctx) error {
 		return util.GenerateResponse[interface{}](ctx, nil, false, "Request Body Not Found")
 	}
 
-	userSearch := models.User{Email: createUser.EmailAddress}
+	userFilter := models.User{Email: createUser.EmailAddress}
 
-	user, errGetUser := controller.UserService.GenericMongo.FindOne(util.StructToMap(userSearch))
+	user, errGetUser := controller.UserService.GenericMongo.FindOne(util.GetFieldBsonTag[models.User](userFilter), []any{createUser.EmailAddress})
 
-	if errGetUser != nil {
+	log.Println(user, createUser)
+
+	if errGetUser != nil && errGetUser != mongo.ErrNoDocuments {
 		return util.GenerateResponse[interface{}](ctx, nil, false, errGetUser.Error())
 	}
 
-	log.Println(user)
+	if user.Email == createUser.EmailAddress {
+		return util.GenerateResponse[interface{}](ctx, nil, false, "User Already Exists")
+	}
 
-	return nil
+	hashedPassword, errHashPass := bcrypt.GenerateFromPassword([]byte(createUser.Password), 14)
+
+	if errHashPass != nil {
+		log.Println(errHashPass.Error())
+		return util.GenerateResponse[interface{}](ctx, nil, false, errHashPass.Error())
+	}
+
+	errCreateUser := controller.UserService.Create(createUser.EmailAddress, string(hashedPassword))
+
+	if errCreateUser != nil {
+		log.Println(errCreateUser.Error())
+		return util.GenerateResponse[interface{}](ctx, nil, false, errCreateUser.Error())
+	}
+
+	return util.GenerateResponse[interface{}](ctx, "User Created Successfully", true, "")
 
 }

@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"url_shortner/genericMongo"
 	"url_shortner/models"
@@ -14,6 +15,7 @@ type UserService struct {
 
 func (userSer *UserService) Create(emailAddress, passwordHash string) error {
 	newUser := models.User{
+		ID:           primitive.NewObjectID(),
 		Email:        emailAddress,
 		PasswordHash: passwordHash,
 	}
