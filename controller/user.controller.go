@@ -24,9 +24,7 @@ func (controller *UserController) Create(ctx *fiber.Ctx) error {
 		return util.GenerateResponse[interface{}](ctx, nil, false, "Request Body Not Found")
 	}
 
-	userFilter := models.User{Email: createUser.EmailAddress}
-
-	user, errGetUser := controller.UserService.GenericMongo.FindOne(util.GetFieldBsonTag[models.User](userFilter), []any{createUser.EmailAddress})
+	user, errGetUser := controller.UserService.GenericMongo.FindOne(util.GetFieldBsonTag[models.User]([]models.User{{Email: createUser.EmailAddress}}), []any{createUser.EmailAddress})
 
 	log.Println(user, createUser)
 

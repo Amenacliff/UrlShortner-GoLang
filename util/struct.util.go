@@ -16,17 +16,19 @@ func StructToMap(obj interface{}) (newMap map[any]any) {
 	return
 }
 
-func GetFieldBsonTag[T any](object T) []string {
-
-	typeReflect := reflect.TypeOf(object)
-	structValue := reflect.ValueOf(object)
+func GetFieldBsonTag[T any](objects []T) []string {
 
 	allBsonFields := make([]string, 0)
 
-	for i := 0; i < typeReflect.NumField(); i++ {
+	for _, object := range objects {
+		typeReflect := reflect.TypeOf(object)
+		structValue := reflect.ValueOf(object)
 
-		if structValue.Field(i).IsZero() == false {
-			allBsonFields = append(allBsonFields, typeReflect.Field(i).Tag.Get("bson"))
+		for i := 0; i < structValue.NumField(); i++ {
+
+			if structValue.Field(i).IsZero() == false {
+				allBsonFields = append(allBsonFields, typeReflect.Field(i).Tag.Get("bson"))
+			}
 		}
 	}
 
