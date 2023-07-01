@@ -5,9 +5,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 	"log"
+	"strings"
+	"time"
+	"url_shortner/constants"
 	userDTO "url_shortner/dto/user"
 	"url_shortner/models"
 	"url_shortner/services"
+	"url_shortner/services/jwtService"
 	"url_shortner/util"
 )
 
@@ -32,7 +36,7 @@ func (controller *UserController) Create(ctx *fiber.Ctx) error {
 		return util.GenerateResponse[interface{}](ctx, nil, false, errGetUser.Error())
 	}
 
-	if user.Email == createUser.EmailAddress {
+	if strings.TrimSpace(strings.ToLower(user.Email)) == strings.TrimSpace(strings.ToLower(createUser.EmailAddress)) {
 		return util.GenerateResponse[interface{}](ctx, nil, false, "User Already Exists")
 	}
 
@@ -43,11 +47,29 @@ func (controller *UserController) Create(ctx *fiber.Ctx) error {
 		return util.GenerateResponse[interface{}](ctx, nil, false, errHashPass.Error())
 	}
 
-	errCreateUser := controller.UserService.Create(createUser.EmailAddress, string(hashedPassword))
+	userId, errCreateUser := controller.UserService.Create(createUser.EmailAddress, string(hashedPassword))
 
 	if errCreateUser != nil {
 		log.Println(errCreateUser.Error())
 		return util.GenerateResponse[interface{}](ctx, nil, false, errCreateUser.Error())
+	}
+
+	jwtToken, errCreateToken := jwtService.CreateToken(userId)
+
+	if errCreateToken != nil {
+		log.Println(errCreateToken.Error())
+	}
+
+	if errCreateUser == nil {
+		cookieDetails := fiber.Cookie{
+			Name:     constants.CookieKey,
+			Value:    jwtToken,
+			Expires:  time.Now().Add(time.Hour * 168),
+			HTTPOnly: false,
+			Secure:   false,
+		}
+
+		ctx.Cookie(&cookieDetails)
 	}
 
 	return util.GenerateResponse[interface{}](ctx, "User Created Successfully", true, "")

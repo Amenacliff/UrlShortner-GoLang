@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/encryptcookie"
 	"log"
 	"url_shortner/constants"
 	"url_shortner/routes"
@@ -11,12 +12,16 @@ import (
 )
 
 func main() {
+	envData, err := util.GetEnvData()
 
+	encryptKey, err := util.GetEnv(constants.ENCRYPT_KEY)
 	app := fiber.New()
 
 	app.Use(cors.New())
 
-	envData, err := util.GetEnvData()
+	app.Use(encryptcookie.New(encryptcookie.Config{
+		Key: encryptKey,
+	}))
 
 	if err != nil {
 		return

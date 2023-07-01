@@ -17,16 +17,27 @@ type ShortUrlRoutes struct {
 
 var shortUrlController controller.ShortURLController
 
-func (shortUrlRoute *ShortUrlRoutes) Init(shortUrlMapCollection *mongo.Collection) {
-	genericMongoClient := &genericMongo.GenericMongo[models.ShortURLMap]{
+func (shortUrlRoute *ShortUrlRoutes) Init(shortUrlMapCollection *mongo.Collection, userCollection *mongo.Collection) {
+	genericShortUrlMongoClient := &genericMongo.GenericMongo[models.ShortURLMap]{
 		Collection: shortUrlMapCollection,
 	}
 	shortUrlMapService := services.ShortUrlsService{
 		Collection:   shortUrlMapCollection,
-		GenericMongo: genericMongoClient,
+		GenericMongo: genericShortUrlMongoClient,
 	}
+
+	genericUserCollection := &genericMongo.GenericMongo[models.User]{
+		Collection: userCollection,
+	}
+
+	userService := services.UserService{
+		Collection:   userCollection,
+		GenericMongo: genericUserCollection,
+	}
+
 	controller := controller.ShortURLController{
 		ShortUrlMapService: shortUrlMapService,
+		UserService:        userService,
 	}
 
 	shortUrlRoute.shortUrlController = controller
@@ -36,7 +47,9 @@ func (shortUrlRoute *ShortUrlRoutes) SetUpRoutes(app *fiber.App, dbClient *mongo
 
 	shortUrlMapCollection := dbClient.Collection(constants.SHORT_URL_MAP_COLLECTION_NAME)
 
-	shortUrlRoute.Init(shortUrlMapCollection)
+	userCollection := dbClient.Collection(constants.USER_COLLECTION_NAME)
+
+	shortUrlRoute.Init(shortUrlMapCollection, userCollection)
 
 	shortURLRoute := app.Group("/shortUrl")
 	shortURLRoute.Get("/create", shortUrlRoute.shortUrlController.Create)

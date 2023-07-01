@@ -22,3 +22,14 @@ func GetEnvData() (map[string]string, error) {
 
 	return myEnv, nil
 }
+
+func GetEnv(key string) (string, error) {
+	envData, err := GetEnvData()
+
+	if err != nil {
+		log.Println(err.Error())
+		return "", err
+	}
+
+	return envData[key], nil
+}

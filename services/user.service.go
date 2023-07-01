@@ -13,9 +13,10 @@ type UserService struct {
 	GenericMongo *genericMongo.GenericMongo[models.User]
 }
 
-func (userSer *UserService) Create(emailAddress, passwordHash string) error {
+func (userSer *UserService) Create(emailAddress, passwordHash string) (string, error) {
+	userId := primitive.NewObjectID()
 	newUser := models.User{
-		ID:           primitive.NewObjectID(),
+		ID:           userId,
 		Email:        emailAddress,
 		PasswordHash: passwordHash,
 	}
@@ -23,8 +24,8 @@ func (userSer *UserService) Create(emailAddress, passwordHash string) error {
 	_, err := userSer.Collection.InsertOne(context.TODO(), newUser)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return userId.String(), nil
 }
