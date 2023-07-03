@@ -2,11 +2,15 @@ package controller
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
+	"time"
+	"url_shortner/constants"
 	"url_shortner/dto/shortUrl"
 	"url_shortner/models"
 	"url_shortner/services"
+	"url_shortner/services/jwtService"
 	"url_shortner/util"
 )
 
@@ -24,7 +28,17 @@ func (controller *ShortURLController) Create(ctx *fiber.Ctx) error {
 		return util.GenerateResponse(ctx, "Something Went Wrong", false, "Something Went Wrong")
 	}
 
-	userObjectId, errGetUserObjectId := primitive.ObjectIDFromHex(createShortUrl.UserId)
+	cookie := ctx.Cookies(constants.CookieKey)
+
+	userId, errGetId := jwtService.GetUserId(cookie)
+
+	if errGetId != nil {
+		log.Println(errGetId.Error())
+		return util.GenerateResponse(ctx, "Unauthorized", false, "Not Logged in ")
+
+	}
+
+	userObjectId, errGetUserObjectId := primitive.ObjectIDFromHex(userId)
 
 	if errGetUserObjectId != nil {
 		log.Println(errGetUserObjectId.Error())
@@ -37,5 +51,15 @@ func (controller *ShortURLController) Create(ctx *fiber.Ctx) error {
 		return util.GenerateResponse(ctx, "User not Found", false, "Something Went Wrong")
 	}
 
-	return util.GenerateResponse(ctx, "", true, "")
+	urlId := uuid.New().String()[0:5]
+
+	errCreate := controller.ShortUrlMapService.Create(urlId, createShortUrl.LongURL, createShortUrl.Passworded, createShortUrl.Password, int(time.Now().Add(time.Hour*24*30).UnixMilli()), userId)
+
+	if errCreate != nil {
+		log.Println(errCreate.Error())
+		return util.GenerateResponse(ctx, "Something Went Wrong", false, errCreate.Error())
+	}
+
+	return util.GenerateResponse(ctx, urlId, true, "Generated Short URL successfully")
+
 }

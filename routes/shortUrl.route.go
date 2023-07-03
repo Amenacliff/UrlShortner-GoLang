@@ -52,5 +52,5 @@ func (shortUrlRoute *ShortUrlRoutes) SetUpRoutes(app *fiber.App, dbClient *mongo
 	shortUrlRoute.Init(shortUrlMapCollection, userCollection)
 
 	shortURLRoute := app.Group("/shortUrl")
-	shortURLRoute.Get("/create", shortUrlRoute.shortUrlController.Create)
+	shortURLRoute.Post("/create", shortUrlRoute.shortUrlController.Create)
 }

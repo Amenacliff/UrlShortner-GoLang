@@ -27,5 +27,5 @@ func (userSer *UserService) Create(emailAddress, passwordHash string) (string, e
 		return "", err
 	}
 
-	return userId.String(), nil
+	return userId.Hex(), nil
 }
