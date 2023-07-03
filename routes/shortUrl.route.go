@@ -8,14 +8,13 @@ import (
 	"url_shortner/genericMongo"
 	"url_shortner/models"
 	"url_shortner/services"
+	"url_shortner/util"
 )
 
 type ShortUrlRoutes struct {
 	shortUrlMapService services.ShortUrlsService
 	shortUrlController controller.ShortURLController
 }
-
-var shortUrlController controller.ShortURLController
 
 func (shortUrlRoute *ShortUrlRoutes) Init(shortUrlMapCollection *mongo.Collection, userCollection *mongo.Collection) {
 	genericShortUrlMongoClient := &genericMongo.GenericMongo[models.ShortURLMap]{
@@ -26,6 +25,8 @@ func (shortUrlRoute *ShortUrlRoutes) Init(shortUrlMapCollection *mongo.Collectio
 		GenericMongo: genericShortUrlMongoClient,
 	}
 
+	lruCache := util.LRUCache[models.ShortURLMap]{}
+
 	genericUserCollection := &genericMongo.GenericMongo[models.User]{
 		Collection: userCollection,
 	}
@@ -35,12 +36,13 @@ func (shortUrlRoute *ShortUrlRoutes) Init(shortUrlMapCollection *mongo.Collectio
 		GenericMongo: genericUserCollection,
 	}
 
-	controller := controller.ShortURLController{
+	controllerB := controller.ShortURLController{
 		ShortUrlMapService: shortUrlMapService,
 		UserService:        userService,
+		Cache:              lruCache.InitializeCache(1000),
 	}
 
-	shortUrlRoute.shortUrlController = controller
+	shortUrlRoute.shortUrlController = controllerB
 }
 
 func (shortUrlRoute *ShortUrlRoutes) SetUpRoutes(app *fiber.App, dbClient *mongo.Database) {
@@ -53,4 +55,5 @@ func (shortUrlRoute *ShortUrlRoutes) SetUpRoutes(app *fiber.App, dbClient *mongo
 
 	shortURLRoute := app.Group("/shortUrl")
 	shortURLRoute.Post("/create", shortUrlRoute.shortUrlController.Create)
+	app.Get("/:id", shortUrlRoute.shortUrlController.RedirectShortUrl)
 }
