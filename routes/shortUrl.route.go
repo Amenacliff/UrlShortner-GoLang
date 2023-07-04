@@ -25,7 +25,7 @@ func (shortUrlRoute *ShortUrlRoutes) Init(shortUrlMapCollection *mongo.Collectio
 		GenericMongo: genericShortUrlMongoClient,
 	}
 
-	lruCache := util.LRUCache[models.ShortURLMap]{}
+	lruCache := util.LRUCache{}
 
 	genericUserCollection := &genericMongo.GenericMongo[models.User]{
 		Collection: userCollection,

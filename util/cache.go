@@ -1,38 +1,50 @@
 package util
 
-type Node[T any] struct {
+import (
+	"encoding/json"
+	"log"
+)
+
+type Node struct {
 	key  string
-	data T
-	prev *Node[T]
-	next *Node[T]
+	data []byte
+	prev *Node
+	next *Node
 }
 
-type LRUCache[T any] struct {
-	head      *Node[T]
-	tail      *Node[T]
+type LRUCache struct {
+	head      *Node
+	tail      *Node
 	maxLength int
 	length    int
-	cacheMap  map[string]*Node[T]
+	cacheMap  map[string]*Node
 }
 
-func (cache *LRUCache[T]) InitializeCache(maxSize int) *LRUCache[T] {
-	newLruCache := LRUCache[T]{
+func (cache *LRUCache) InitializeCache(maxSize int) *LRUCache {
+	newLruCache := LRUCache{
 		maxLength: maxSize,
 		length:    0,
-		cacheMap:  make(map[string]*Node[T]),
+		cacheMap:  make(map[string]*Node),
 	}
 
 	return &newLruCache
 }
 
-func (cache *LRUCache[T]) IncreaseCacheSize(addedSpace int) {
+func (cache *LRUCache) IncreaseCacheSize(addedSpace int) {
 	cache.maxLength += addedSpace
 }
 
-func (cache *LRUCache[T]) Put(key string, data T) {
-	newCacheItem := &Node[T]{
+func (cache *LRUCache) Put(key string, data any) {
+
+	byteData, err := json.Marshal(data)
+
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	newCacheItem := &Node{
 		key:  key,
-		data: data,
+		data: byteData,
 	}
 	if cache.head == nil {
 		cache.head = newCacheItem
@@ -52,7 +64,7 @@ func (cache *LRUCache[T]) Put(key string, data T) {
 
 }
 
-func (cache *LRUCache[T]) RemoveItem(cacheItem *Node[T]) {
+func (cache *LRUCache) RemoveItem(cacheItem *Node) {
 
 	if cache.head == nil {
 		return
@@ -73,7 +85,7 @@ func (cache *LRUCache[T]) RemoveItem(cacheItem *Node[T]) {
 
 }
 
-func (cache *LRUCache[T]) RemoveLastCacheItem() {
+func (cache *LRUCache) RemoveLastCacheItem() {
 	lastItem := cache.tail
 	if lastItem != nil {
 		previousItem := lastItem.prev
@@ -84,7 +96,7 @@ func (cache *LRUCache[T]) RemoveLastCacheItem() {
 	cache.length = cache.length - 1
 }
 
-func (cache *LRUCache[T]) AddItemToFront(cacheItem *Node[T]) *Node[T] {
+func (cache *LRUCache) AddItemToFront(cacheItem *Node) *Node {
 	if cache.head == nil {
 		cache.head = cacheItem
 		cache.tail = cacheItem
@@ -104,13 +116,13 @@ func (cache *LRUCache[T]) AddItemToFront(cacheItem *Node[T]) *Node[T] {
 
 }
 
-func (cache *LRUCache[T]) Get(key string) *Node[T] {
+func (cache *LRUCache) Get(key string) []byte {
 	if value, ok := cache.cacheMap[key]; ok {
 		if value != cache.head {
 			cache.RemoveItem(value)
 			cache.AddItemToFront(value)
 		}
-		return value
+		return value.data
 	} else {
 		return nil
 	}

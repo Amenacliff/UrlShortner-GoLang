@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -19,7 +20,7 @@ import (
 type ShortURLController struct {
 	ShortUrlMapService services.ShortUrlsService
 	UserService        services.UserService
-	Cache              *util.LRUCache[models.ShortURLMap]
+	Cache              *util.LRUCache
 }
 
 func (controller *ShortURLController) Create(ctx *fiber.Ctx) error {
@@ -79,14 +80,29 @@ func (controller *ShortURLController) RedirectShortUrl(ctx *fiber.Ctx) error {
 
 	var shortUrlData models.ShortURLMap
 
-	data, errShortUrl := controller.ShortUrlMapService.GenericMongo.FindOne(util.GetFieldBsonTag[models.ShortURLMap]([]models.ShortURLMap{{UrlId: shortUrlId}}), []any{shortUrlId})
+	cacheData := controller.Cache.Get(shortUrlId)
 
-	if errShortUrl != nil {
-		log.Println(errShortUrl.Error())
-		return util.GenerateResponse(ctx, "", false, "An Error Occurred")
+	errConvert := json.Unmarshal(cacheData, &shortUrlData)
+
+	if errConvert != nil {
+		log.Println(errConvert.Error())
 	}
 
-	shortUrlData = data
+	if cacheData == nil {
+		log.Println("Cache Miss")
+		data, errShortUrl := controller.ShortUrlMapService.GenericMongo.FindOne(util.GetFieldBsonTag[models.ShortURLMap]([]models.ShortURLMap{{UrlId: shortUrlId}}), []any{shortUrlId})
+
+		if errShortUrl != nil {
+			log.Println(errShortUrl.Error())
+			return util.GenerateResponse(ctx, "", false, "An Error Occurred")
+		}
+
+		shortUrlData = data
+
+		controller.Cache.Put(shortUrlId, data)
+	} else {
+		log.Println("Cache Hit")
+	}
 
 	if int(time.Now().UnixMilli()) > shortUrlData.ExpiryDate {
 		return util.GenerateResponse(ctx, "", false, "Expired Short URL")
@@ -106,6 +122,7 @@ func (controller *ShortURLController) RedirectShortUrl(ctx *fiber.Ctx) error {
 		log.Println(errComparePass.Error())
 		return util.GenerateResponse(ctx, "", false, "Password Provided, is Incorrect ")
 	}
+
 	return ctx.Redirect(shortUrlData.LongURL)
 
 }
