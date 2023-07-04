@@ -7,7 +7,7 @@ import (
 
 type Node struct {
 	key  string
-	data []byte
+	Data []byte
 	prev *Node
 	next *Node
 }
@@ -42,9 +42,15 @@ func (cache *LRUCache) Put(key string, data any) {
 		log.Println(err.Error())
 	}
 
+	node := cache.Get(key)
+
+	if node != nil {
+		cache.RemoveItem(node)
+	}
+
 	newCacheItem := &Node{
 		key:  key,
-		data: byteData,
+		Data: byteData,
 	}
 	if cache.head == nil {
 		cache.head = newCacheItem
@@ -116,13 +122,13 @@ func (cache *LRUCache) AddItemToFront(cacheItem *Node) *Node {
 
 }
 
-func (cache *LRUCache) Get(key string) []byte {
+func (cache *LRUCache) Get(key string) *Node {
 	if value, ok := cache.cacheMap[key]; ok {
 		if value != cache.head {
 			cache.RemoveItem(value)
 			cache.AddItemToFront(value)
 		}
-		return value.data
+		return value
 	} else {
 		return nil
 	}

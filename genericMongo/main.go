@@ -88,3 +88,30 @@ func (genericMongoose *GenericMongo[T]) FindById(id primitive.ObjectID) (T, erro
 	return document, nil
 
 }
+
+func (genericMongoose *GenericMongo[T]) Update(keys []string, values []any, keysToUpdate []string, valueToUpdate []any) (bool, error) {
+	var bsonKeyAndValue = bson.M{}
+
+	for i, key := range keys {
+		bsonKeyAndValue[key] = values[i]
+	}
+
+	log.Println(keysToUpdate, valueToUpdate)
+
+	var valueKeyAndValue []bson.E
+
+	for k, key := range keysToUpdate {
+		valueKeyAndValue = append(valueKeyAndValue, bson.E{Key: key, Value: valueToUpdate[k]})
+	}
+
+	updateRes, errUpdate := genericMongoose.Collection.UpdateOne(appContext.Background(), bsonKeyAndValue, bson.D{{"$set", valueKeyAndValue}})
+
+	if errUpdate != nil {
+		log.Println(errUpdate.Error())
+		return false, errUpdate
+	}
+
+	log.Println(updateRes.ModifiedCount)
+
+	return updateRes.ModifiedCount > 0, nil
+}

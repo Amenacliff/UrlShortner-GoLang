@@ -25,7 +25,6 @@ func GetFieldBsonTag[T any](objects []T) []string {
 		structValue := reflect.ValueOf(object)
 
 		for i := 0; i < structValue.NumField(); i++ {
-
 			if structValue.Field(i).IsZero() == false {
 				allBsonFields = append(allBsonFields, typeReflect.Field(i).Tag.Get("bson"))
 			}

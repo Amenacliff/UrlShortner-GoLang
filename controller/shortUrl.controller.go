@@ -82,12 +82,6 @@ func (controller *ShortURLController) RedirectShortUrl(ctx *fiber.Ctx) error {
 
 	cacheData := controller.Cache.Get(shortUrlId)
 
-	errConvert := json.Unmarshal(cacheData, &shortUrlData)
-
-	if errConvert != nil {
-		log.Println(errConvert.Error())
-	}
-
 	if cacheData == nil {
 		log.Println("Cache Miss")
 		data, errShortUrl := controller.ShortUrlMapService.GenericMongo.FindOne(util.GetFieldBsonTag[models.ShortURLMap]([]models.ShortURLMap{{UrlId: shortUrlId}}), []any{shortUrlId})
@@ -102,6 +96,10 @@ func (controller *ShortURLController) RedirectShortUrl(ctx *fiber.Ctx) error {
 		controller.Cache.Put(shortUrlId, data)
 	} else {
 		log.Println("Cache Hit")
+		errConvert := json.Unmarshal(cacheData.Data, &shortUrlData)
+		if errConvert != nil {
+			log.Println(errConvert.Error())
+		}
 	}
 
 	if int(time.Now().UnixMilli()) > shortUrlData.ExpiryDate {
@@ -122,6 +120,23 @@ func (controller *ShortURLController) RedirectShortUrl(ctx *fiber.Ctx) error {
 		log.Println(errComparePass.Error())
 		return util.GenerateResponse(ctx, "", false, "Password Provided, is Incorrect ")
 	}
+
+	go func() {
+
+		keys := util.GetFieldBsonTag[models.ShortURLMap]([]models.ShortURLMap{{UrlId: shortUrlId}})
+
+		updated, errUpdate := controller.ShortUrlMapService.GenericMongo.Update(keys, []any{shortUrlId}, util.GetFieldBsonTag[models.ShortURLMap]([]models.ShortURLMap{{NumberOfHits: 1}}), []any{shortUrlData.NumberOfHits + 1})
+
+		if errUpdate != nil {
+			log.Println(errUpdate.Error())
+		}
+
+		shortUrlData.NumberOfHits += 1
+
+		controller.Cache.Put(shortUrlId, shortUrlData)
+
+		log.Println(updated, "Updated Short URL")
+	}()
 
 	return ctx.Redirect(shortUrlData.LongURL)
 
